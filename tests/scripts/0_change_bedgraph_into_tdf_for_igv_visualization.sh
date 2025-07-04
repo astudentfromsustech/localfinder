@@ -14,3 +14,4 @@ for bg in "$src_dir"/*.bedgraph; do
   tdf=${base}.tdf
 
   igvtools toTDF ${bg} ${tdf} ${genome}
+done
