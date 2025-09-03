@@ -4,8 +4,8 @@ export PYTHONUNBUFFERED=1
 chrom_size="../annotations/mm9.chrom.sizes"
 data_dir="../test_CTCF_ChIP-seq_data_from_Cell2017"
 mkdir -p ${data_dir}
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2609nnn/GSM2609185/suppl/GSM2609185_CTCF_ChIP-seq_CTCF-AID_untreated_rep1_ENC124_tagDensity.bw -O ${data_dir}/CTCF_untreated.bw
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2609nnn/GSM2609186/suppl/GSM2609186_CTCF_ChIP-seq_CTCF-AID_auxin2days_rep1_ENC125_tagDensity.bw -O ${data_dir}/CTCF_treated.bw
+wget -t 0 -c ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2609nnn/GSM2609185/suppl/GSM2609185_CTCF_ChIP-seq_CTCF-AID_untreated_rep1_ENC124_tagDensity.bw -O ${data_dir}/CTCF_untreated.bw
+wget -t 0 -c ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2609nnn/GSM2609186/suppl/GSM2609186_CTCF_ChIP-seq_CTCF-AID_auxin2days_rep1_ENC125_tagDensity.bw -O ${data_dir}/CTCF_treated.bw
 
 result_dir="../result_test_CTCF_ChIP-seq_data_from_Cell2017_step_by_step"
 mkdir -p ${result_dir}

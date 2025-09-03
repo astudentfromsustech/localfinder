@@ -1,45 +1,53 @@
-# ─── pyproject.toml ────────────────────────────────────────────────────
-[build-system]
-requires = ["setuptools>=64", "wheel"]          # build back-end runtime
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "localfinder"
-version = "0.1.23"
-description = "localfinder – calculate weighted local correlation (hmC) and enrichment significance (ES) between two genomic tracks, optionally discover significantly different regions(SDRs), and visualise results"
+version = "0.2.0"
+description = "localfinder - calculate weighted local correlation (hmC) and enrichment significance (ES) between two genomic tracks, optionally discover significantly different regions(SDRs), and visualise results"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 authors = [{ name = "Pengfei Yin", email = "12133074@mail.sustech.edu.cn" }]
 requires-python = ">=3.9"
 
-# Run-time dependencies (same list you had in install_requires)
 dependencies = [
-  "numpy",
-  "statsmodels",
-  "pandas",
-  "scipy",
-  "matplotlib",
-  "plotly",
-  "pyGenomeTracks",
-  "scikit-learn",
-  "argcomplete"
+  "plotly>=6.3.0",
+  "pygenometracks>=3.9",
+  "scikit-learn>=1.6.1",
+  "statsmodels>=0.14.5",
 ]
 
-# Optional: metadata that shows up nicely on PyPI
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python :: 3",
   "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent"
 ]
 
-# expose the CLI exactly like you did in setup.py
 [project.scripts]
 localfinder = "localfinder.__main__:main"
 
-# ─── (optional) include non-code files without MANIFEST.in ─────────────
-[tool.setuptools.package-data]
-# ship every *.ini, *.bedgraph etc. inside the package
-"localfinder" = ["*.ini", "*.bedgraph"]
+[project.urls]
+repository = "https://github.com/astudentfromsustech/localfinder"
+issues = "https://github.com/astudentfromsustech/localfinder/issues"
+
+[tool.setuptools]
+packages = ["localfinder"]
+
+[dependency-groups]
+dev = ["ipython>=8.18.1"]
+
+[tool.mypy]
+disable_error_code = ["import-not-found"]
+
+[tool.ruff]
+line-length = 99
+indent-width = 4
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"

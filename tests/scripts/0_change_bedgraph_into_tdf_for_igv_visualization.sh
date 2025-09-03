@@ -1,6 +1,6 @@
 # conda create -n tools_igvtools
 # conda activate tools_igvtools
-# conda activate -c bioconda -c conda-forge igvtools=2.16.2
+# conda install -c bioconda -c conda-forge igvtools=2.16.2
 
 # genome="hg19"
 # src_dir="../test_data_chr20"
