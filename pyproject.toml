@@ -5,7 +5,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "localfinder"
+<<<<<<< HEAD
 version = "0.1.30"
+=======
+version = "0.1.28"
+>>>>>>> 1864258 (LocalFinder update)
 description = "localfinder – calculate weighted local correlation (hmC) and enrichment significance (ES) between two genomic tracks, optionally discover significantly different regions(SDRs), and visualise results"
 readme = "README.md"
 license = { file = "LICENSE" }

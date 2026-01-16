@@ -217,6 +217,97 @@ def bin_bedgraph(input_bedgraph, output_bedgraph, bin_size, chrom_sizes, chrom):
 
 
 
+<<<<<<< HEAD
+=======
+def build_pseudo_background_bedgraph(
+    input_bedgraph,
+    output_bedgraph,
+    bin_number_of_window=11,
+    bg_method='poisson',   # {'poisson','zinb'}
+    chrom=None
+):
+    import numpy as np
+    import pandas as pd
+
+    if chrom is None:
+        raise ValueError("Argument 'chrom' (e.g. 'chr1') must be provided")
+    if bin_number_of_window < 1 or bin_number_of_window % 2 == 0:
+        raise ValueError("bin_number_of_window must be a positive odd integer")
+    bg_method = (bg_method or '').lower()
+    if bg_method not in {'poisson', 'zinb'}:
+        raise ValueError("bg_method must be one of {'poisson','zinb'}")
+
+    W = int(bin_number_of_window)
+    window_list_bins = [W, (W - 5) * 2 + 1, (W - 3) * 2 + 1]
+    # window_list_bins = [W, int((W - 1) * 1.5)]
+
+    df_all = pd.read_csv(input_bedgraph, sep="\t", header=None,
+                         names=["chr", "start", "end", "value"])
+    df_chr = df_all[df_all["chr"] == chrom].copy().reset_index(drop=True)
+    if df_chr.empty:
+        raise ValueError(f"No rows for chromosome {chrom} in {input_bedgraph}")
+
+    # Fast rolling mean helper (vectorized)
+    def _roll_mean_bins(arr: np.ndarray, w_bins: int) -> np.ndarray:
+        s = pd.Series(arr)
+        return s.rolling(window=int(w_bins), center=True, min_periods=1).mean().to_numpy()
+
+    x = df_chr["value"].to_numpy(float)
+
+    # --- Global background (used in both branches) ---------------------  
+    if bg_method == "poisson":                                              
+        global_base = float(np.mean(x))                                     
+    else:  # 'zinb'                                                         
+        if x.size == 0:                                                     
+            global_base = 0.0                                               
+        else:                                                               
+            zeros = int((x == 0).sum())                                     
+            if zeros == x.size:                                             
+                global_base = 0.0                                           
+            else:                                                           
+                mu_nz = float(x[x > 0].mean())                              
+                pi = zeros / x.size                                         
+                global_base = (1.0 - pi) * mu_nz                            
+
+    if bg_method == "poisson":
+        # Stream the running **min** across window scales                   
+        lam = _roll_mean_bins(x, window_list_bins[0])
+        for w in window_list_bins[1:]:
+            lam = np.minimum(lam, _roll_mean_bins(x, w))
+        # Finally take min with the **global** background                   
+        # lam = np.minimum(lam, global_base) 
+        lam = np.maximum(lam, global_base)                                   
+    else:
+        # ZINB path uses apply (slower), unchanged per-window behavior
+        def _roll_apply_bins(arr: np.ndarray, w_bins: int, fn) -> np.ndarray:
+            s = pd.Series(arr)
+            return s.rolling(window=int(w_bins), center=True, min_periods=1).apply(fn, raw=False).to_numpy()
+        def _win_fn(win):
+            w = pd.Series(win)
+            L = len(w)
+            if L == 0:
+                return 0.0
+            zeros = int((w == 0).sum())
+            if zeros == L:
+                return 0.0
+            mu_nz = float(w[w > 0].mean())
+            pi    = zeros / L
+            return (1.0 - pi) * mu_nz
+        lam = _roll_apply_bins(x, window_list_bins[0], _win_fn)
+        for w in window_list_bins[1:]:
+            lam = np.minimum(lam, _roll_apply_bins(x, w, _win_fn))
+        # Min with global ZINB expectation                                 
+        # lam = np.minimum(lam, global_base)
+        lam = np.maximum(lam, global_base)                                   
+
+    out = df_chr[["chr", "start", "end"]].copy()
+    out["value"] = lam
+    out.to_csv(output_bedgraph, sep="\t", header=False, index=False)
+    return output_bedgraph
+
+
+
+>>>>>>> 1864258 (LocalFinder update)
 def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
         bin_number_of_window=11, step=1, percentile=5, percentile_mode='all', FC_thresh=1.5,
         bin_number_of_peak=11, norm_method='rpkm', corr_method='pearson', FDR=False, HMC_scale_pct=0.9995,
@@ -242,6 +333,18 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
                 df[column2] *= cov1 / cov2
                 print(f"Scaled {column2} down to match {column1}")
 
+<<<<<<< HEAD
+=======
+    elif norm_method == 'rpkm':                               
+
+        bin_lengths_kb = (df['end'] - df['start']) / 1_000.0
+        if cov1 > 0:
+            df[column1] = df[column1] / bin_lengths_kb * 1e6 / cov1
+        if cov2 > 0:
+            df[column2] = df[column2] / bin_lengths_kb * 1e6 / cov2
+        print(f"Converted {column1} and {column2} to RPKM")
+
+>>>>>>> 1864258 (LocalFinder update)
     elif norm_method == 'none':                       
         print("No normalization applied (using original bin values).")  
         
@@ -252,6 +355,8 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
     # ---------- output paths -------------------------------------------
     out_ES   = os.path.join(output_dir, f'track_ES.{chrom}.bedgraph')
     out_HMC = os.path.join(output_dir, f'track_HMC.{chrom}.bedgraph')
+    out_rawHMC = os.path.join(output_dir, f'track_rawHMC.{chrom}.bedgraph')
+    # out_LOGrawHMC = os.path.join(output_dir, f'track_LOGrawHMC.{chrom}.bedgraph')
 
 
     half_w = (bin_number_of_window - 1) // 2
@@ -260,6 +365,13 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
 
     df_final = pd.DataFrame()
 
+<<<<<<< HEAD
+=======
+    # ===================================================================
+    # per-chromosome processing
+    # ===================================================================
+    print("step2: calculate weighted correlation and ES")
+>>>>>>> 1864258 (LocalFinder update)
     df_raw = df[df['chr'] == chrom].reset_index(drop=True)            
     n = len(df_raw)
     if n == 0:
@@ -386,9 +498,17 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
     mu2 = np.maximum(m2_fl[idx], pct)
     SE  = np.sqrt(1/mu1 + 1/mu2 + d1_fl[idx] + d2_fl[idx])        
     Wald = logFC[idx] / SE
+<<<<<<< HEAD
     p    = 2 * (1 + norm.cdf(np.abs(Wald)))
     if FDR:                                         
         lP = -np.log10(np.where(p == 0.5, np.nan, p))  
+=======
+    p    = 2 * (1 - norm.cdf(np.abs(Wald)))
+    if FDR:                                         
+        # q  = multipletests(p, alpha=0.05, method='fdr_bh')[1]
+        # lP = -np.log10(np.where(q == 0, np.nan, q))    # log-q
+        lP = -np.log10(np.where(p == 0, np.nan, p))    # log-p
+>>>>>>> 1864258 (LocalFinder update)
     else:
         lP = -np.log10(np.where(p == 0.5, np.nan, p))  
 
@@ -411,11 +531,23 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
 
     df_final['signed_log_Wald_pValue'] = (np.sign(df_final['logFC']) * df_final['log_Wald_pValue'])
     df_final['HMC']   = df_final['m_corr'] * df_final['hmw']
+<<<<<<< HEAD
     df_final[['chr', 'start', 'end', 'HMC']].to_csv(out_rawHMC,sep='\t', header=False, index=False)           
+=======
+    df_final[['chr', 'start', 'end', 'HMC']].to_csv(out_rawHMC,sep='\t', header=False, index=False)
+    # # --- NEW: log10+min-max scale HMC into [0,1] while preserving order ---
+    # log_HMC      = np.log10(df_final['HMC'] + 1)       
+    # max_log_HMC  = log_HMC.max()                        
+    # df_final['HMC'] = log_HMC / max_log_HMC             
+>>>>>>> 1864258 (LocalFinder update)
 
     p_thr = df_final['HMC'].quantile(HMC_scale_pct)                  
     df_final['HMC'] = df_final['HMC'].clip(upper=p_thr) / p_thr  
+<<<<<<< HEAD
     df_final['HMC'] = df_final['HMC'].fillna(1)
+=======
+    df_final['HMC'] = df_final['HMC'].fillna(0.0)
+>>>>>>> 1864258 (LocalFinder update)
 
     df_final[['chr', 'start', 'end', 'HMC']].to_csv(out_HMC,sep='\t', header=False, index=False)
     df_final[['chr', 'start', 'end', 'signed_log_Wald_pValue']].to_csv(out_ES,sep='\t', header=False, index=False)
