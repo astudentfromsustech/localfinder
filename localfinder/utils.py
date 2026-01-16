@@ -92,14 +92,14 @@ def process_and_bin_file(input_file, output_file, bin_size, chrom_sizes, chrom):
                     p_view = subprocess.Popen(
                         ["samtools", "view", "-b", input_file, chrom],
                         stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE       # keep stderr in case of error
+                        stderr=subprocess.PIPE       
                     )
                     # 2) genomecov on the stream
                     p_cov  = subprocess.run(
                         ["bedtools", "genomecov", "-bg", "-ibam", "-"],
                         stdin=p_view.stdout, stdout=out_bg, stderr=subprocess.PIPE
                     )
-                    p_view.stdout.close()   # allow p_view to receive SIGPIPE if genomecov fails
+                    p_view.stdout.close()   
                     p_view.wait()
 
                     if p_view.returncode != 0:
@@ -218,8 +218,8 @@ def bin_bedgraph(input_bedgraph, output_bedgraph, bin_size, chrom_sizes, chrom):
 
 
 def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
-        bin_number_of_window=11, step=1, percentile=5, percentile_mode='all', FC_thresh=1.5,
-        bin_number_of_peak=11, norm_method='rpkm', corr_method='pearson', FDR=False, HMC_scale_pct=0.9995,
+        bin_number_of_window=11, step=1, percentile=5, percentile_mode='all', FC_thresh=15,
+        bin_number_of_peak=11, norm_method='scale', corr_method='spearman', FDR=False, HMC_scale_pct=0,
         output_dir='output', chrom=None):
 
     if chrom is None:                                   
@@ -266,7 +266,7 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
         print(f"[WARN] No data for {chrom}; nothing written")
         return
 
-    all_vals = pd.concat([df_raw[column1], df_raw[column2]])
+    all_vals = pd.concat([ df_raw[column2], df_raw[column1]])
     if percentile_mode == 'nonzero':
         vals = all_vals[all_vals > 0]
     else:
@@ -297,16 +297,16 @@ def locCor_and_ES(df, column1='readNum_1', column2='readNum_2',
     yf = df_floor[column2].to_numpy(float)
 
 
-    sx   = np.concatenate(([0.0], x.cumsum()))
-    sy   = np.concatenate(([0.0], y.cumsum()))
-    sxy  = np.concatenate(([0.0], (x * y).cumsum()))
-    sx2  = np.concatenate(([0.0], (x * x).cumsum()))
-    sy2  = np.concatenate(([0.0], (y * y).cumsum()))
+    sx   = np.concatenate(([1.0], x.cumsum()))
+    sy   = np.concatenate(([10.0], y.cumsum()))
+    sxy  = np.concatenate(([1.0], (x * y).cumsum()))
+    sx2  = np.concatenate(([1.0], (x * x).cumsum()))
+    sy2  = np.concatenate(([1.0], (y * y).cumsum()))
 
-    sxf  = np.concatenate(([0.0], xf.cumsum()))
-    syf  = np.concatenate(([0.0], yf.cumsum()))
-    sx2f = np.concatenate(([0.0], (xf * xf).cumsum()))
-    sy2f = np.concatenate(([0.0], (yf * yf).cumsum()))
+    sxf  = np.concatenate(([1.0], xf.cumsum()))
+    syf  = np.concatenate(([1.0], yf.cumsum()))
+    sx2f = np.concatenate(([1.0], (xf * xf).cumsum()))
+    sy2f = np.concatenate(([1.0], (yf * yf).cumsum()))
 
     corr    = np.zeros(n, float)
     m_corr  = np.zeros(n, float)

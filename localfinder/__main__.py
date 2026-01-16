@@ -68,15 +68,6 @@ def main():
                  --bin_size 200 \\
                  --chrom_sizes mm10.chrom.sizes \\
                  --chroms chr1 chr2
-
-            2) Example 2:
-               localfinder bin \\
-                 --input_files track1.bigwig track2.bigwig \\
-                 --output_dir ./binned_tracks \\
-                 --bin_size 200 \\
-                 --chrom_sizes hg19.chrom.sizes \\
-                 --chroms all \\
-                 --threads 4
         '''),
         formatter_class=_wide_formatter(),                                      
     )
@@ -87,7 +78,7 @@ def main():
     g_io.add_argument('--output_dir', required=True, metavar='DIR',
                       help='Output directory for binned data.')
     g_genome = parser_bin.add_argument_group("Genomics")
-    g_genome.add_argument('--bin_size', type=int, default=200, metavar='BP',
+    g_genome.add_argument('--bin_size', type=int, default=10000, metavar='BP',
                           help='Size of each bin.')
     g_genome.add_argument('--chrom_sizes', type=str, required=True, metavar='FILE',
                           help='Path to the chromosome sizes file.')
@@ -154,7 +145,7 @@ def main():
                           help='Number of bins in the ES peak window.')
     g_method.add_argument('--FC_thresh', type=float, default=1.5,
                           help='Fold-change threshold used as log base in enrichment.')
-    g_method.add_argument('--norm_method', choices=['scale', 'cpm', 'rpkm', 'none'], default='rpkm',
+    g_method.add_argument('--norm_method', choices=['scale'], default='scale',
                           help='Normalisation strategy.')
     g_method.add_argument('--HMC_scale_pct', type=float, default=0.9995,
                           help='Quantile used to clip+rescale HMC into [0,1].')
@@ -317,7 +308,7 @@ def main():
                         help='Use all bins or only non-zero bins for percentile.')
     g_calc.add_argument("--FC_thresh", type=float, default=1.5,
                         help="Fold-change threshold used as log base in enrichment.")
-    g_calc.add_argument('--norm_method', choices=['scale', 'cpm', 'rpkm', 'none'], default='rpkm',
+    g_calc.add_argument('--norm_method', choices=['scale']
                         help='Normalisation strategy.')
     g_calc.add_argument("--HMC_scale_pct", type=float, default=0.9995,
                         help="Quantile used to clip+rescale HMC into [0,1].")
